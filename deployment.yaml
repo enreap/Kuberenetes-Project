@@ -2,8 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: APP_NAME
+  labels:
+    app: APP_NAME
 spec:
-  replicas: 2
+  replicas: 2   # initial replicas
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   selector:
     matchLabels:
       app: APP_NAME
@@ -15,5 +22,39 @@ spec:
       containers:
       - name: APP_NAME
         image: IMAGE_NAME
+        imagePullPolicy: Always
         ports:
         - containerPort: PORT
+
+        # ✅ Resource Management
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+
+        # ✅ Liveness Probe (restart if unhealthy)
+        livenessProbe:
+          httpGet:
+            path: /
+            port: PORT
+          initialDelaySeconds: 15
+          periodSeconds: 20
+
+        # ✅ Readiness Probe (traffic only if ready)
+        readinessProbe:
+          httpGet:
+            path: /
+            port: PORT
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        # ✅ Startup Probe (for slow apps)
+        startupProbe:
+          httpGet:
+            path: /
+            port: PORT
+          failureThreshold: 30
+          periodSeconds: 10
